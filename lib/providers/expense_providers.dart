@@ -89,15 +89,21 @@ class ExpenseNotifier extends _$ExpenseNotifier {
     return values;
   }
 
-  Future<void> exportAsPdf(List<Expense> expenses) async {
+  Future<void> exportAsPdf({
+    required List<Expense> expenses,
+    required double total,
+  }) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() => _expenseService.exportAsPdf(expenses));
+    state = await AsyncValue.guard(() => _expenseService.exportAsPdf(expenses: expenses, total: total));
   }
 
-  Future<void> exportAsCsv(List<Expense> expenses) async {
+  Future<void> exportAsCsv({
+    required List<Expense> expenses,
+    required double total,
+  }) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() => _expenseService.exportAsCsv(expenses));
+    state = await AsyncValue.guard(() => _expenseService.exportAsCsv(expenses: expenses, total: total));
   }
 }

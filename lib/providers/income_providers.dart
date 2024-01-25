@@ -91,16 +91,22 @@ class IncomeNotifier extends _$IncomeNotifier {
   }
 
   /// For exporting the incomes as pdf documents for printing
-  Future<void> exportAsPdf(List<Income> incomes) async {
+  Future<void> exportAsPdf({
+    required List<Income> incomes,
+    required double total,
+  }) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() => _incomeService.exportAsPdf(incomes));
+    state = await AsyncValue.guard(() => _incomeService.exportAsPdf(incomes: incomes, total: total));
   }
 
   /// For exporting the incomes as csv file
-  Future<void> exportAsCsv(List<Income> incomes) async {
+  Future<void> exportAsCsv({
+    required List<Income> incomes,
+    required double total,
+  }) async {
     state = const AsyncLoading();
 
-    state = await AsyncValue.guard(() => _incomeService.exportAsCsv(incomes));
+    state = await AsyncValue.guard(() => _incomeService.exportAsCsv(incomes: incomes, total: total));
   }
 }

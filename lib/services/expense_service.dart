@@ -97,7 +97,10 @@ class ExpenseService {
   }
 
   /// For exporting the expenses as pdf documents for printing
-  Future<void> exportAsPdf(List<Expense> expenses) async {
+  Future<String> exportAsPdf({
+    required List<Expense> expenses,
+    required double total,
+  }) async {
     try {
       final document = pw.Document();
 
@@ -131,6 +134,17 @@ class ExpenseService {
                     pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
+                        // No.
+                        pw.SizedBox(
+                          width: 30,
+                          child: pw.Text(
+                            'No.',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+
+                        pw.SizedBox(width: 6),
+
                         // Date
                         pw.SizedBox(
                           width: 80,
@@ -155,7 +169,7 @@ class ExpenseService {
 
                         // Description
                         pw.SizedBox(
-                          width: 148,
+                          width: 130,
                           child: pw.Text(
                             'Description',
                             style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -195,6 +209,14 @@ class ExpenseService {
                           pw.SizedBox(height: 4),
                           pw.Row(
                             children: [
+                              // No.
+                              pw.SizedBox(
+                                width: 30,
+                                child: pw.Text('${expenses.indexOf(expense) + 1}.'),
+                              ),
+
+                              pw.SizedBox(width: 6),
+
                               // Date
                               pw.SizedBox(
                                 width: 80,
@@ -213,7 +235,7 @@ class ExpenseService {
 
                               // Description
                               pw.SizedBox(
-                                width: 148,
+                                width: 130,
                                 child: pw.Text(expense.description),
                               ),
 
@@ -250,14 +272,16 @@ class ExpenseService {
                             child: pw.Text(
                               'Total:',
                               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                              textAlign: pw.TextAlign.end,
                             ),
                           ),
                           pw.SizedBox(width: 6),
                           pw.SizedBox(
                             width: 60,
                             child: pw.Text(
-                              expenses.map((e) => e.amount).toList().reduce((value, element) => value + element).toString(),
+                              total.toString(),
                               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                              textAlign: pw.TextAlign.end,
                             ),
                           ),
                         ],
@@ -272,15 +296,23 @@ class ExpenseService {
       );
 
       await Printing.layoutPdf(onLayout: (format) async => document.save());
+
+      return 'Expenses exported as pdf successfully.';
     } on Exception catch (error) {
       throw error.toString();
     }
   }
 
   /// For exporting the expenses as csv file
-  Future<String> exportAsCsv(List<Expense> expenses) async {
+  Future<String> exportAsCsv({
+    required List<Expense> expenses,
+    required double total,
+  }) async {
     try {
       if (await Permission.storage.request().isGranted) {
+        final List<List<String>> data = [];
+
+        // For headers
         final headers = [
           'No.',
           'Date',
@@ -290,8 +322,9 @@ class ExpenseService {
           'Amount (NPR)',
         ];
 
-        List<List<String>> data = [headers];
+        data.add(headers);
 
+        // For data
         for (final expense in expenses) {
           final expenseData = [
             (expenses.indexOf(expense) + 1).toString(),
@@ -305,14 +338,24 @@ class ExpenseService {
           data.add(expenseData);
         }
 
+        // For total
+        final totalList = [
+          '',
+          '',
+          '',
+          '',
+          'Total:',
+          total.toString(),
+        ];
+
+        data.add(totalList);
+
         String csv = const ListToCsvConverter().convert(data);
         String dir = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOCUMENTS);
-
-        File file = File('$dir/expense.csv');
+        File file = File('$dir/expense_${DateTime.now().millisecondsSinceEpoch}.csv');
 
         await file.writeAsString(csv);
-
-        OpenFile.open(file.path);
+        await OpenFile.open(file.path);
 
         return 'Expenses exported as csv successfully.';
       }

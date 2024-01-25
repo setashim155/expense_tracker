@@ -95,7 +95,10 @@ class IncomeService {
   }
 
   /// For exporting the incomes as pdf documents for printing
-  Future<void> exportAsPdf(List<Income> incomes) async {
+  Future<String> exportAsPdf({
+    required List<Income> incomes,
+    required double total,
+  }) async {
     try {
       final document = pw.Document();
 
@@ -129,6 +132,17 @@ class IncomeService {
                     pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
+                        // No.
+                        pw.SizedBox(
+                          width: 30,
+                          child: pw.Text(
+                            'No.',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+
+                        pw.SizedBox(width: 6),
+
                         // Date
                         pw.SizedBox(
                           width: 80,
@@ -153,7 +167,7 @@ class IncomeService {
 
                         // Description
                         pw.SizedBox(
-                          width: 208,
+                          width: 178,
                           child: pw.Text(
                             'Description',
                             style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -182,6 +196,14 @@ class IncomeService {
                           pw.SizedBox(height: 4),
                           pw.Row(
                             children: [
+                              // No.
+                              pw.SizedBox(
+                                width: 30,
+                                child: pw.Text('${incomes.indexOf(income) + 1}.'),
+                              ),
+
+                              pw.SizedBox(width: 6),
+
                               // Date
                               pw.SizedBox(
                                 width: 80,
@@ -200,7 +222,7 @@ class IncomeService {
 
                               // Description
                               pw.SizedBox(
-                                width: 208,
+                                width: 178,
                                 child: pw.Text(income.description),
                               ),
 
@@ -251,15 +273,23 @@ class IncomeService {
       );
 
       await Printing.layoutPdf(onLayout: (format) async => document.save());
+
+      return 'Incomes exported as pdf successfully.';
     } on Exception catch (error) {
       throw error.toString();
     }
   }
 
   /// For exporting the incomes as csv file
-  Future<String> exportAsCsv(List<Income> incomes) async {
+  Future<String> exportAsCsv({
+    required List<Income> incomes,
+    required double total,
+  }) async {
     try {
       if (await Permission.storage.request().isGranted) {
+        final List<List<String>> data = [];
+
+        // For headers
         final headers = [
           'No.',
           'Date',
@@ -268,8 +298,9 @@ class IncomeService {
           'Amount (NPR)',
         ];
 
-        List<List<String>> data = [headers];
+        data.add(headers);
 
+        // For data
         for (final income in incomes) {
           final incomeData = [
             (incomes.indexOf(income) + 1).toString(),
@@ -282,14 +313,23 @@ class IncomeService {
           data.add(incomeData);
         }
 
+        // For total
+        final totalList = [
+          '',
+          '',
+          '',
+          'Total:',
+          total.toString(),
+        ];
+
+        data.add(totalList);
+
         String csv = const ListToCsvConverter().convert(data);
         String dir = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOCUMENTS);
-
-        File file = File('$dir/income.csv');
+        File file = File('$dir/income_${DateTime.now().millisecondsSinceEpoch}.csv');
 
         await file.writeAsString(csv);
-
-        OpenFile.open(file.path);
+        await OpenFile.open(file.path);
 
         return 'Incomes exported as csv successfully.';
       }

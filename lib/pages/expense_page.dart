@@ -24,6 +24,7 @@ class ExpensePage extends ConsumerStatefulWidget {
 
 class _ExpensePageState extends ConsumerState<ExpensePage> {
   List<Expense> filteredExpenses = [];
+  double total = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +65,7 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                 context: context,
                 title: 'Confirm Clear',
                 message: 'Do you want to clear the filter?',
-                onOk: () => ref
-                    .read(filterProvider(id: TransactionType.expense).notifier)
-                    .clear(),
+                onOk: () => ref.read(filterProvider(id: TransactionType.expense).notifier).clear(),
               ),
               icon: const Icon(Icons.filter_list_off_rounded),
             ),
@@ -79,8 +78,7 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
 
             // For filter page
             IconButton(
-              onPressed: () => context.pushNamed(AppRoute.filter.name,
-                  extra: TransactionType.expense),
+              onPressed: () => context.pushNamed(AppRoute.filter.name, extra: TransactionType.expense),
               icon: const Icon(Icons.filter_list_rounded),
             )
           ],
@@ -92,10 +90,7 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
               // For search by description
               AppSearchBar(
                 onSearch: (description) {
-                  ref
-                      .read(
-                          filterProvider(id: TransactionType.expense).notifier)
-                      .updateDescription(description);
+                  ref.read(filterProvider(id: TransactionType.expense).notifier).updateDescription(description);
                 },
               ),
               _buildExpenseList(),
@@ -114,9 +109,8 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
 
         return allExpensesState.when(
           data: (expenses) {
-            filteredExpenses = ref
-                .read(filterProvider(id: TransactionType.expense).notifier)
-                .filter(data: expenses) as List<Expense>;
+            filteredExpenses = ref.read(filterProvider(id: TransactionType.expense).notifier).filter(data: expenses) as List<Expense>;
+            total = ref.read(filterProvider(id: TransactionType.expense).notifier).total;
 
             return filteredExpenses.isEmpty
                 ? const EmptyView(message: 'Sorry, no expenses available.')
@@ -135,17 +129,12 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                                 description: filteredExpense.description,
                                 date: filteredExpense.date,
                                 amount: filteredExpense.amount,
-                                onEdit: () => context.goNamed(
-                                    AppRoute.expenseForm.name,
-                                    extra: filteredExpense),
+                                onEdit: () => context.goNamed(AppRoute.expenseForm.name, extra: filteredExpense),
                                 onDelete: () => UiHelper.showAlert(
                                   context: context,
                                   title: 'Confirm Delete',
-                                  message:
-                                      'Do you want to remove this expense?',
-                                  onOk: () => ref
-                                      .read(expenseNotifierProvider.notifier)
-                                      .deleteExpense(id: filteredExpense.id),
+                                  message: 'Do you want to remove this expense?',
+                                  onOk: () => ref.read(expenseNotifierProvider.notifier).deleteExpense(id: filteredExpense.id),
                                 ),
                               );
                             },
@@ -175,11 +164,7 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
                                 ),
                               ),
                               Text(
-                                Helper.formatCurrency(ref
-                                    .read(filterProvider(
-                                            id: TransactionType.expense)
-                                        .notifier)
-                                    .total),
+                                Helper.formatCurrency(total),
                                 style: const TextStyle(
                                   color: Colors.redAccent,
                                   fontWeight: FontWeight.bold,
@@ -222,14 +207,20 @@ class _ExpensePageState extends ConsumerState<ExpensePage> {
         itemBuilder: (context) {
           return [
             PopupMenuItem(
-              onTap: () => ref
-                  .read(expenseNotifierProvider.notifier)
-                  .exportAsPdf(filteredExpenses),
+              onTap: () {
+                ref.read(expenseNotifierProvider.notifier).exportAsPdf(
+                      expenses: filteredExpenses,
+                      total: total,
+                    );
+              },
               child: const Text('PDF'),
             ),
             PopupMenuItem(
               onTap: () {
-                // TODO: Implement csv
+                ref.read(expenseNotifierProvider.notifier).exportAsCsv(
+                      expenses: filteredExpenses,
+                      total: total,
+                    );
               },
               child: const Text('CSV'),
             ),

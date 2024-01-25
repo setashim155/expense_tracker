@@ -24,6 +24,7 @@ class IncomePage extends ConsumerStatefulWidget {
 
 class _IncomePageState extends ConsumerState<IncomePage> {
   List<Income> filteredIncomes = [];
+  double total = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +65,7 @@ class _IncomePageState extends ConsumerState<IncomePage> {
                 context: context,
                 title: 'Confirm Clear',
                 message: 'Do you want to clear the filter?',
-                onOk: () => ref
-                    .read(filterProvider(id: TransactionType.income).notifier)
-                    .clear(),
+                onOk: () => ref.read(filterProvider(id: TransactionType.income).notifier).clear(),
               ),
               icon: const Icon(Icons.filter_list_off_rounded),
             ),
@@ -79,8 +78,7 @@ class _IncomePageState extends ConsumerState<IncomePage> {
 
             // For filter page
             IconButton(
-              onPressed: () => context.goNamed(AppRoute.filter.name,
-                  extra: TransactionType.income),
+              onPressed: () => context.goNamed(AppRoute.filter.name, extra: TransactionType.income),
               icon: const Icon(Icons.filter_list_rounded),
             ),
           ],
@@ -91,9 +89,7 @@ class _IncomePageState extends ConsumerState<IncomePage> {
             children: [
               AppSearchBar(
                 onSearch: (description) {
-                  ref
-                      .read(filterProvider(id: TransactionType.income).notifier)
-                      .updateDescription(description);
+                  ref.read(filterProvider(id: TransactionType.income).notifier).updateDescription(description);
                 },
               ),
               _buildIncomeList(),
@@ -112,9 +108,8 @@ class _IncomePageState extends ConsumerState<IncomePage> {
 
         return allIncomesState.when(
           data: (incomes) {
-            filteredIncomes = ref
-                .read(filterProvider(id: TransactionType.income).notifier)
-                .filter(data: incomes) as List<Income>;
+            filteredIncomes = ref.read(filterProvider(id: TransactionType.income).notifier).filter(data: incomes) as List<Income>;
+            total = ref.read(filterProvider(id: TransactionType.income).notifier).total;
 
             return filteredIncomes.isEmpty
                 ? const EmptyView(message: 'Sorry, no incomes available.')
@@ -133,16 +128,12 @@ class _IncomePageState extends ConsumerState<IncomePage> {
                                 description: filteredIncome.description,
                                 date: filteredIncome.date,
                                 amount: filteredIncome.amount,
-                                onEdit: () => context.goNamed(
-                                    AppRoute.incomeForm.name,
-                                    extra: filteredIncome),
+                                onEdit: () => context.goNamed(AppRoute.incomeForm.name, extra: filteredIncome),
                                 onDelete: () => UiHelper.showAlert(
                                   context: context,
                                   title: 'Confirm Delete',
                                   message: 'Do you want to remove this income?',
-                                  onOk: () => ref
-                                      .read(incomeNotifierProvider.notifier)
-                                      .deleteIncome(id: filteredIncome.id),
+                                  onOk: () => ref.read(incomeNotifierProvider.notifier).deleteIncome(id: filteredIncome.id),
                                 ),
                               );
                             },
@@ -172,11 +163,7 @@ class _IncomePageState extends ConsumerState<IncomePage> {
                                 ),
                               ),
                               Text(
-                                Helper.formatCurrency(ref
-                                    .read(filterProvider(
-                                            id: TransactionType.income)
-                                        .notifier)
-                                    .total),
+                                Helper.formatCurrency(total),
                                 style: const TextStyle(
                                   color: Colors.green,
                                   fontWeight: FontWeight.bold,
@@ -219,15 +206,11 @@ class _IncomePageState extends ConsumerState<IncomePage> {
         itemBuilder: (context) {
           return [
             PopupMenuItem(
-              onTap: () => ref
-                  .read(incomeNotifierProvider.notifier)
-                  .exportAsPdf(filteredIncomes),
+              onTap: () => ref.read(incomeNotifierProvider.notifier).exportAsPdf(incomes: filteredIncomes, total: total),
               child: const Text('PDF'),
             ),
             PopupMenuItem(
-              onTap: () => ref
-                  .read(incomeNotifierProvider.notifier)
-                  .exportAsCsv(filteredIncomes),
+              onTap: () => ref.read(incomeNotifierProvider.notifier).exportAsCsv(incomes: filteredIncomes, total: total),
               child: const Text('CSV'),
             ),
           ];
